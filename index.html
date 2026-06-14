@@ -1,0 +1,1883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>From Product to Production — AI Journey</title>
+  <meta name="description" content="How a physical product became a deployable digital experience using AI. A premium storytelling presentation." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;700;800;900&family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <style>
+    /* ─── RESET & TOKENS ─────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #000000;
+      --card-bg: #0a0a0a;
+      --green: #1DB954;
+      --green-dim: rgba(29,185,84,0.15);
+      --green-glow: rgba(29,185,84,0.4);
+      --white: #ffffff;
+      --muted: #a0a0a0;
+      --border: rgba(255,255,255,0.08);
+      --border-green: rgba(29,185,84,0.3);
+      --font-head: 'Inter Tight', sans-serif;
+      --font-body: 'Space Grotesk', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--white);
+      font-family: var(--font-body);
+      overflow-x: hidden;
+      cursor: none;
+    }
+
+    /* ─── CUSTOM CURSOR ──────────────────────────────────────── */
+    .cursor {
+      position: fixed;
+      width: 10px; height: 10px;
+      background: var(--green);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      transition: transform 0.1s, width 0.3s, height 0.3s, background 0.3s;
+      mix-blend-mode: screen;
+    }
+    .cursor-ring {
+      position: fixed;
+      width: 36px; height: 36px;
+      border: 1.5px solid rgba(29,185,84,0.6);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9998;
+      transform: translate(-50%, -50%);
+      transition: transform 0.12s ease-out, width 0.3s, height 0.3s;
+    }
+
+    /* ─── PROGRESS BAR ───────────────────────────────────────── */
+    #progress-bar {
+      position: fixed;
+      top: 0; left: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--green), #00ff88);
+      z-index: 1000;
+      transform-origin: left;
+      transform: scaleX(0);
+      transition: transform 0.1s linear;
+      box-shadow: 0 0 10px var(--green-glow);
+    }
+
+    /* ─── NAVBAR ─────────────────────────────────────────────── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 900;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 48px;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .nav-logo {
+      font-family: var(--font-head);
+      font-weight: 900;
+      font-size: 13px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--white);
+    }
+    .nav-logo span { color: var(--green); }
+    .nav-stage {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 2px;
+    }
+
+    /* ─── STAGE RAIL ─────────────────────────────────────────── */
+    .stage-rail {
+      position: fixed;
+      right: 32px; top: 50%;
+      transform: translateY(-50%);
+      z-index: 800;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+    }
+    .rail-node {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+    }
+    .rail-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255,255,255,0.2);
+      background: transparent;
+      transition: all 0.4s ease;
+      position: relative;
+    }
+    .rail-node.active .rail-dot {
+      background: var(--green);
+      border-color: var(--green);
+      box-shadow: 0 0 12px var(--green-glow);
+    }
+    .rail-connector {
+      width: 1px;
+      height: 36px;
+      background: rgba(255,255,255,0.08);
+      position: relative;
+      overflow: hidden;
+    }
+    .rail-connector::after {
+      content: '';
+      position: absolute;
+      top: -100%; left: 0;
+      width: 100%; height: 100%;
+      background: var(--green);
+      transition: top 0.6s ease;
+    }
+    .rail-node.active ~ .rail-connector::after,
+    .rail-connector.filled::after { top: 0; }
+    .rail-label {
+      position: absolute;
+      right: 20px;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: var(--muted);
+      white-space: nowrap;
+      opacity: 0;
+      transform: translateX(8px);
+      transition: all 0.3s;
+    }
+    .rail-node:hover .rail-label, .rail-node.active .rail-label {
+      opacity: 1; transform: translateX(0);
+    }
+    .rail-node.active .rail-label { color: var(--green); }
+
+    /* ─── SECTIONS ───────────────────────────────────────────── */
+    section {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 120px 80px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* ─── HERO ───────────────────────────────────────────────── */
+    #hero {
+      align-items: center;
+      text-align: center;
+      padding: 0;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 50%, rgba(29,185,84,0.07) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black 30%, transparent 100%);
+    }
+
+    .hero-eyebrow {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 4px;
+      color: var(--green);
+      text-transform: uppercase;
+      margin-bottom: 28px;
+      opacity: 0;
+    }
+
+    .hero-title {
+      font-family: var(--font-head);
+      font-weight: 900;
+      font-size: clamp(52px, 8vw, 120px);
+      line-height: 0.92;
+      letter-spacing: -3px;
+      margin-bottom: 32px;
+      opacity: 0;
+    }
+    .hero-title .line-green { color: var(--green); }
+    .hero-title .line-dim { color: rgba(255,255,255,0.15); }
+
+    .hero-sub {
+      font-size: clamp(14px, 1.6vw, 18px);
+      color: var(--muted);
+      max-width: 560px;
+      line-height: 1.7;
+      opacity: 0;
+      margin: 0 auto 48px;
+    }
+
+    .hero-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid var(--border-green);
+      border-radius: 100px;
+      padding: 10px 20px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: var(--green);
+      background: var(--green-dim);
+      opacity: 0;
+    }
+    .pill-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.7); }
+    }
+
+    .hero-scroll-hint {
+      position: absolute;
+      bottom: 40px; left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+    }
+    .scroll-line {
+      width: 1px; height: 48px;
+      background: linear-gradient(to bottom, transparent, var(--green));
+      animation: scrollLine 2s ease infinite;
+    }
+    @keyframes scrollLine {
+      0% { transform: scaleY(0); transform-origin: top; }
+      50% { transform: scaleY(1); transform-origin: top; }
+      51% { transform: scaleY(1); transform-origin: bottom; }
+      100% { transform: scaleY(0); transform-origin: bottom; }
+    }
+    .scroll-label {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      letter-spacing: 3px;
+      color: var(--muted);
+    }
+
+    /* ─── WORKFLOW STRIP ─────────────────────────────────────── */
+    #workflow {
+      min-height: 50vh;
+      padding: 80px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .workflow-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 4px;
+      color: var(--green);
+      text-transform: uppercase;
+      margin-bottom: 48px;
+      opacity: 0;
+    }
+    .workflow-strip {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      overflow: hidden;
+    }
+    .wf-step {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      flex: 1;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    .wf-box {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 20px;
+      background: var(--card-bg);
+      position: relative;
+      transition: border-color 0.3s, background 0.3s;
+      overflow: hidden;
+    }
+    .wf-box::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--green-dim);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .wf-box:hover { border-color: var(--border-green); }
+    .wf-box:hover::before { opacity: 1; }
+    .wf-num {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--green);
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+    }
+    .wf-title {
+      font-family: var(--font-head);
+      font-weight: 800;
+      font-size: 18px;
+      margin-bottom: 6px;
+    }
+    .wf-tool {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 1px;
+    }
+    .wf-arrow {
+      width: 40px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--green);
+      font-size: 20px;
+      opacity: 0.4;
+    }
+
+    /* ─── STAGE SECTIONS ─────────────────────────────────────── */
+    .stage-section {
+      min-height: 100vh;
+      padding: 120px 80px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stage-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 64px;
+    }
+    .stage-num {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 4px;
+      color: var(--green);
+      margin-bottom: 16px;
+    }
+    .stage-title {
+      font-family: var(--font-head);
+      font-weight: 900;
+      font-size: clamp(36px, 5vw, 72px);
+      line-height: 1;
+      letter-spacing: -2px;
+    }
+    .stage-desc {
+      max-width: 360px;
+      font-size: 15px;
+      color: var(--muted);
+      line-height: 1.7;
+      text-align: right;
+    }
+    .stage-tool-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--border-green);
+      border-radius: 100px;
+      padding: 6px 16px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--green);
+      background: var(--green-dim);
+      margin-bottom: 20px;
+    }
+    .badge-icon { font-size: 12px; }
+
+    /* ─── CAPTURE SECTION ────────────────────────────────────── */
+    .capture-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+    }
+    .capture-card {
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      aspect-ratio: 3/4;
+      position: relative;
+      cursor: pointer;
+      transition: transform 0.4s ease, border-color 0.3s;
+      opacity: 1;
+    }
+    .capture-card:hover {
+      transform: translateY(-8px) scale(1.02) !important;
+      border-color: var(--border-green);
+      z-index: 10;
+    }
+    .capture-card img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.6s ease;
+    }
+    .capture-card:hover img { transform: scale(1.08); }
+    .capture-card-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 50%);
+      opacity: 0;
+      transition: opacity 0.3s;
+      display: flex;
+      align-items: flex-end;
+      padding: 16px;
+    }
+    .capture-card:hover .capture-card-overlay { opacity: 1; }
+    .capture-card-tag {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: var(--green);
+    }
+
+    /* ─── GENERATE SECTION ───────────────────────────────────── */
+    .generate-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .gen-card {
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      position: relative;
+      aspect-ratio: 4/5;
+      cursor: pointer;
+      transition: all 0.4s ease;
+      opacity: 1;
+    }
+    .gen-card:hover {
+      transform: scale(1.02) !important;
+      border-color: var(--border-green);
+      box-shadow: 0 0 40px rgba(29,185,84,0.15);
+    }
+    .gen-card img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.6s ease;
+    }
+    .gen-card:hover img { transform: scale(1.06); }
+    .gen-card-info {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 24px 20px 20px;
+      background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, transparent 100%);
+      transform: translateY(4px);
+      transition: transform 0.3s;
+    }
+    .gen-card:hover .gen-card-info { transform: translateY(0); }
+    .gen-card-title {
+      font-family: var(--font-head);
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+    .gen-card-model {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--green);
+      letter-spacing: 1px;
+    }
+    .gen-highlight {
+      grid-column: span 2;
+      aspect-ratio: 16/10;
+    }
+
+    /* ─── AI BADGE ───────────────────────────────────────────── */
+    .ai-tag {
+      position: absolute;
+      top: 16px; right: 16px;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border-green);
+      border-radius: 100px;
+      padding: 4px 12px;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--green);
+      letter-spacing: 2px;
+    }
+
+    /* ─── ANIMATE SECTION ────────────────────────────────────── */
+    .animate-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      align-items: center;
+    }
+    .video-wrapper {
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      aspect-ratio: 16/9;
+      position: relative;
+      opacity: 0;
+      transform: translateX(-40px);
+    }
+    .video-wrapper video {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .video-overlay-badge {
+      position: absolute;
+      top: 16px; left: 16px;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--white);
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .rec-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #ff4444;
+      animation: pulse 1.5s infinite;
+    }
+    .animate-info {
+      opacity: 0;
+      transform: translateX(40px);
+    }
+    .animate-stat {
+      display: flex;
+      flex-direction: column;
+      border-left: 2px solid var(--border-green);
+      padding-left: 20px;
+      margin-bottom: 32px;
+    }
+    .stat-val {
+      font-family: var(--font-head);
+      font-weight: 900;
+      font-size: 42px;
+      line-height: 1;
+      color: var(--white);
+    }
+    .stat-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 2px;
+      margin-top: 6px;
+    }
+
+    /* ─── PLAN SECTION ───────────────────────────────────────── */
+    .docs-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .doc-card {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px 24px;
+      background: var(--card-bg);
+      position: relative;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      opacity: 0;
+      transform: translateY(30px);
+      overflow: hidden;
+    }
+    .doc-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--green), transparent);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.4s ease;
+    }
+    .doc-card:hover { border-color: var(--border-green); background: #0d0d0d; }
+    .doc-card:hover::after { transform: scaleX(1); }
+    .doc-icon {
+      font-size: 28px;
+      margin-bottom: 16px;
+    }
+    .doc-name {
+      font-family: var(--font-head);
+      font-weight: 700;
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+    .doc-meta {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 1px;
+    }
+    .doc-preview {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+      font-family: var(--font-mono);
+    }
+    .tools-used {
+      display: flex;
+      gap: 8px;
+      margin-top: 24px;
+      flex-wrap: wrap;
+    }
+    .tool-badge {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--muted);
+      transition: all 0.3s;
+    }
+    .tool-badge:hover { border-color: var(--border-green); color: var(--green); }
+
+    /* ─── BUILD SECTION ──────────────────────────────────────── */
+    .build-flow {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+    }
+    .build-col {
+      flex: 1;
+      padding: 32px;
+      position: relative;
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    .build-col + .build-col {
+      border-left: 1px solid var(--border);
+    }
+    .build-col-head {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--green);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .build-col-head::before {
+      content: '';
+      display: block;
+      width: 24px; height: 1px;
+      background: var(--green);
+    }
+    .code-block {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      line-height: 1.8;
+      color: #a8b8c8;
+    }
+    .code-comment { color: #4a5568; }
+    .code-keyword { color: #b5e8b0; }
+    .code-string { color: #f6c90e; }
+    .code-fn { color: #79c0ff; }
+    .code-green { color: var(--green); }
+    .website-preview {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      height: 400px;
+      background: #0a0a0a;
+      display: flex;
+      flex-direction: column;
+    }
+    .preview-bar {
+      padding: 10px 16px;
+      background: #141414;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .preview-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .preview-url {
+      margin-left: 8px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--muted);
+      background: #0a0a0a;
+      padding: 3px 12px;
+      border-radius: 6px;
+      flex: 1;
+    }
+    .preview-screen {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-head);
+      font-size: 24px;
+      font-weight: 900;
+      color: rgba(255,255,255,0.06);
+      letter-spacing: -1px;
+    }
+
+    /* ─── DEPLOY SECTION ─────────────────────────────────────── */
+    .deploy-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      align-items: start;
+    }
+    .deploy-card {
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px;
+      background: var(--card-bg);
+      opacity: 0;
+      transform: translateY(40px);
+    }
+    .deploy-card.highlight {
+      border-color: var(--border-green);
+      background: linear-gradient(135deg, rgba(29,185,84,0.05) 0%, #0a0a0a 100%);
+    }
+    .deploy-icon { font-size: 36px; margin-bottom: 20px; }
+    .deploy-title {
+      font-family: var(--font-head);
+      font-weight: 800;
+      font-size: 24px;
+      margin-bottom: 12px;
+    }
+    .deploy-url {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--green);
+      margin-bottom: 24px;
+      word-break: break-all;
+    }
+    .deploy-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--green);
+    }
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse 2s infinite;
+    }
+    .deploy-metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .metric {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .metric-val {
+      font-family: var(--font-head);
+      font-weight: 800;
+      font-size: 28px;
+      color: var(--white);
+      line-height: 1;
+    }
+    .metric-label {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: 2px;
+      margin-top: 4px;
+    }
+
+    /* ─── PIPELINE ───────────────────────────────────────────── */
+    #pipeline {
+      background: linear-gradient(180deg, #000 0%, #020a04 50%, #000 100%);
+    }
+    .pipeline-flow {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .pipe-step {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px 28px;
+      background: var(--card-bg);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      opacity: 0;
+      transform: translateX(-30px);
+      transition: border-color 0.3s, background 0.3s;
+    }
+    .pipe-step:hover {
+      border-color: var(--border-green);
+      background: linear-gradient(135deg, rgba(29,185,84,0.05) 0%, var(--card-bg) 100%);
+    }
+    .pipe-icon {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      background: var(--green-dim);
+      border: 1px solid var(--border-green);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .pipe-label {
+      font-family: var(--font-head);
+      font-weight: 700;
+      font-size: 16px;
+    }
+    .pipe-sub {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 1px;
+      margin-top: 3px;
+    }
+    .pipe-connector {
+      width: 1px; height: 28px;
+      background: linear-gradient(to bottom, var(--green), transparent);
+      margin: 4px auto;
+      opacity: 0;
+    }
+
+    /* ─── FINAL SECTION ──────────────────────────────────────── */
+    #final {
+      text-align: center;
+      background: radial-gradient(ellipse 80% 60% at 50% 50%, rgba(29,185,84,0.06) 0%, transparent 70%);
+    }
+    .final-title {
+      font-family: var(--font-head);
+      font-weight: 900;
+      font-size: clamp(48px, 7vw, 104px);
+      line-height: 0.95;
+      letter-spacing: -3px;
+      margin-bottom: 28px;
+      opacity: 0;
+    }
+    .final-title span { color: var(--green); }
+    .final-sub {
+      font-size: clamp(14px, 1.5vw, 18px);
+      color: var(--muted);
+      max-width: 520px;
+      margin: 0 auto 64px;
+      line-height: 1.7;
+      opacity: 0;
+    }
+    .final-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--green);
+      color: #000;
+      font-family: var(--font-head);
+      font-weight: 800;
+      font-size: 14px;
+      letter-spacing: 1px;
+      padding: 16px 32px;
+      border-radius: 100px;
+      text-decoration: none;
+      opacity: 0;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .final-link:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 40px var(--green-glow);
+    }
+    .final-credits {
+      margin-top: 80px;
+      padding-top: 40px;
+      border-top: 1px solid var(--border);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 3px;
+      opacity: 0;
+    }
+
+    /* ─── FLOATING PARTICLES ─────────────────────────────────── */
+    .particles-canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.3;
+    }
+
+    /* ─── TRANSITION LABELS ──────────────────────────────────── */
+    .section-bg-glow {
+      position: absolute;
+      width: 600px; height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(29,185,84,0.04) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* ─── DIVIDER ─────────────────────────────────────────────── */
+    .divider {
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border), transparent);
+      margin: 0;
+    }
+
+    /* ─── SCROLLBAR ──────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: #000; }
+    ::-webkit-scrollbar-thumb { background: var(--green); border-radius: 2px; }
+
+    /* ─── LIGHTBOX ───────────────────────────────────────────── */
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.95);
+      backdrop-filter: blur(20px);
+      z-index: 9000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 48px;
+    }
+    .lightbox.open { display: flex; }
+    .lightbox img {
+      max-width: 90vw;
+      max-height: 90vh;
+      object-fit: contain;
+      border-radius: 12px;
+      border: 1px solid var(--border-green);
+    }
+    .lightbox-close {
+      position: absolute;
+      top: 24px; right: 24px;
+      font-size: 28px;
+      color: var(--muted);
+      cursor: none;
+      background: none;
+      border: none;
+      transition: color 0.3s;
+    }
+    .lightbox-close:hover { color: var(--white); }
+
+    /* ─── MEDIA QUERIES ──────────────────────────────────────── */
+    @media (max-width: 900px) {
+      section { padding: 80px 24px; }
+      .stage-section { padding: 80px 24px; }
+      nav { padding: 16px 24px; }
+      .capture-grid { grid-template-columns: repeat(3, 1fr); }
+      .generate-grid { grid-template-columns: 1fr 1fr; }
+      .gen-highlight { grid-column: span 2; }
+      .animate-container { grid-template-columns: 1fr; }
+      .docs-grid { grid-template-columns: 1fr 1fr; }
+      .build-flow { flex-direction: column; }
+      .build-col + .build-col { border-left: none; border-top: 1px solid var(--border); }
+      .deploy-grid { grid-template-columns: 1fr; }
+      .stage-rail { display: none; }
+      .workflow-strip { flex-wrap: wrap; gap: 16px; }
+      .wf-arrow { display: none; }
+      .wf-step { flex: 0 0 calc(50% - 8px); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- CURSOR -->
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- PROGRESS BAR -->
+<div id="progress-bar"></div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img src="" id="lightbox-img" alt="Preview" />
+</div>
+
+<!-- PARTICLES -->
+<canvas class="particles-canvas" id="particles"></canvas>
+
+<!-- NAVBAR -->
+<nav>
+  <div class="nav-logo">NT <span>Battery</span></div>
+  <div class="nav-stage" id="nav-stage">STAGE 01 — CAPTURE</div>
+</nav>
+
+<!-- STAGE RAIL -->
+<div class="stage-rail" id="stageRail">
+  <div class="rail-node active" data-target="#hero" style="position:relative">
+    <span class="rail-label">HERO</span>
+    <div class="rail-dot"></div>
+  </div>
+  <div class="rail-connector" id="rc0"></div>
+  <div class="rail-node" data-target="#capture" style="position:relative">
+    <span class="rail-label">CAPTURE</span>
+    <div class="rail-dot"></div>
+  </div>
+  <div class="rail-connector" id="rc1"></div>
+  <div class="rail-node" data-target="#generate" style="position:relative">
+    <span class="rail-label">GENERATE</span>
+    <div class="rail-dot"></div>
+  </div>
+  <div class="rail-connector" id="rc2"></div>
+  <div class="rail-node" data-target="#animate" style="position:relative">
+    <span class="rail-label">ANIMATE</span>
+    <div class="rail-dot"></div>
+  </div>
+  <div class="rail-connector" id="rc3"></div>
+  <div class="rail-node" data-target="#plan" style="position:relative">
+    <span class="rail-label">PLAN</span>
+    <div class="rail-dot"></div>
+  </div>
+  <div class="rail-connector" id="rc4"></div>
+  <div class="rail-node" data-target="#build" style="position:relative">
+    <span class="rail-label">BUILD</span>
+    <div class="rail-dot"></div>
+  </div>
+  <div class="rail-connector" id="rc5"></div>
+  <div class="rail-node" data-target="#deploy" style="position:relative">
+    <span class="rail-label">DEPLOY</span>
+    <div class="rail-dot"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ HERO -->
+<section id="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div style="position:relative; z-index:2; max-width:900px; margin:0 auto; padding: 0 40px;">
+    <div class="hero-eyebrow" id="heroEyebrow">NORTHERN TRUST BATTERY</div>
+    <h1 class="hero-title" id="heroTitle">
+      From<br/>
+      <span class="line-green">Prototype</span><br/>
+      <span class="line-dim">to Production</span>
+    </h1>
+    <p class="hero-sub" id="heroSub">
+      How a physical object became a deployable digital experience — entirely using AI.
+    </p>
+    <div class="hero-pill" id="heroPill">
+      <span class="pill-dot"></span>
+      CAPTURE → GENERATE → ANIMATE → PLAN → BUILD → DEPLOY
+    </div>
+  </div>
+  <div class="hero-scroll-hint" id="heroScroll">
+    <div class="scroll-line"></div>
+    <span class="scroll-label">SCROLL</span>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════ WORKFLOW OVERVIEW -->
+<div class="divider"></div>
+<div id="workflow">
+  <div class="workflow-label">THE PROCESS AT A GLANCE</div>
+  <div class="workflow-strip">
+    <div class="wf-step">
+      <div class="wf-box">
+        <div class="wf-num">01</div>
+        <div class="wf-title">Capture</div>
+        <div class="wf-tool">PHONE CAMERA</div>
+      </div>
+    </div>
+    <div class="wf-arrow">→</div>
+    <div class="wf-step">
+      <div class="wf-box">
+        <div class="wf-num">02</div>
+        <div class="wf-title">Generate</div>
+        <div class="wf-tool">GEMINI NANO</div>
+      </div>
+    </div>
+    <div class="wf-arrow">→</div>
+    <div class="wf-step">
+      <div class="wf-box">
+        <div class="wf-num">03</div>
+        <div class="wf-title">Animate</div>
+        <div class="wf-tool">GOOGLE OMNI</div>
+      </div>
+    </div>
+    <div class="wf-arrow">→</div>
+    <div class="wf-step">
+      <div class="wf-box">
+        <div class="wf-num">04</div>
+        <div class="wf-title">Plan</div>
+        <div class="wf-tool">CLAUDE OPUS</div>
+      </div>
+    </div>
+    <div class="wf-arrow">→</div>
+    <div class="wf-step">
+      <div class="wf-box">
+        <div class="wf-num">05</div>
+        <div class="wf-title">Build</div>
+        <div class="wf-tool">ANTIGRAVITY</div>
+      </div>
+    </div>
+    <div class="wf-arrow">→</div>
+    <div class="wf-step">
+      <div class="wf-box">
+        <div class="wf-num">06</div>
+        <div class="wf-title">Deploy</div>
+        <div class="wf-tool">VERCEL</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="divider"></div>
+
+<!-- ════════════════════════════════════════════ STAGE 01 — CAPTURE -->
+<section id="capture" class="stage-section">
+  <div class="section-bg-glow" style="top:-200px;left:-200px;"></div>
+  <div class="stage-header">
+    <div>
+      <div class="stage-num">STAGE 01 — CAPTURE</div>
+      <h2 class="stage-title">The Raw<br/>Source</h2>
+      <div class="tools-used" style="margin-top:20px;">
+        <div class="tool-badge">📱 Phone Camera</div>
+        <div class="tool-badge">🔦 Natural Light</div>
+        <div class="tool-badge">📐 Multiple Angles</div>
+      </div>
+    </div>
+    <p class="stage-desc">Reference images captured from multiple angles. The physical product photographed in its raw, unretouched form. These become the source material for everything that follows.</p>
+  </div>
+
+  <div class="capture-grid" id="captureGrid">
+    <!-- Dynamically injected by JS -->
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ════════════════════════════════════════════ STAGE 02 — GENERATE -->
+<section id="generate" class="stage-section">
+  <div class="section-bg-glow" style="top:50%;right:-200px; transform:translateY(-50%);"></div>
+  <div class="stage-header">
+    <div>
+      <div class="stage-num">STAGE 02 — GENERATE</div>
+      <h2 class="stage-title">AI Product<br/>Photography</h2>
+      <div class="stage-tool-badge">
+        <span class="badge-icon">✦</span>
+        GEMINI NANO BANANA
+      </div>
+    </div>
+    <p class="stage-desc">Generate premium commercial product imagery from phone photos. One reference — infinite commercial-quality renders.</p>
+  </div>
+
+  <div class="generate-grid" id="generateGrid">
+    <!-- Dynamically injected by JS -->
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ════════════════════════════════════════════ STAGE 03 — ANIMATE -->
+<section id="animate" class="stage-section">
+  <div class="stage-header">
+    <div>
+      <div class="stage-num">STAGE 03 — ANIMATE</div>
+      <h2 class="stage-title">Image<br/>→ Video</h2>
+      <div class="stage-tool-badge">
+        <span class="badge-icon">🎬</span>
+        GOOGLE OMNI
+      </div>
+    </div>
+    <p class="stage-desc">Transform generated images into cinematic product videos. AI choreographs lighting, motion, and depth — no studio required.</p>
+  </div>
+
+  <div class="animate-container">
+    <div class="video-wrapper" id="videoWrapper">
+      <video
+        src="public/assets/videos/Northern%20Trust%20Case%20Opens%20Jun%2012.mp4"
+        autoplay
+        loop
+        muted
+        playsinline
+      ></video>
+      <div class="video-overlay-badge">
+        <span class="rec-dot"></span>
+        CINEMATIC VIDEO — AI GENERATED
+      </div>
+    </div>
+    <div class="animate-info" id="animateInfo">
+      <div class="animate-stat">
+        <div class="stat-val">1</div>
+        <div class="stat-label">SOURCE IMAGE</div>
+      </div>
+      <div class="animate-stat">
+        <div class="stat-val">∞</div>
+        <div class="stat-label">POSSIBLE ANIMATIONS</div>
+      </div>
+      <div class="animate-stat">
+        <div class="stat-val">0</div>
+        <div class="stat-label">STUDIO DAYS REQUIRED</div>
+      </div>
+      <p style="color:var(--muted); font-size:14px; line-height:1.7; margin-top:8px;">
+        Google Omni transforms still product images into cinematic video sequences. Camera paths, lighting changes, and product motion — all AI-choreographed.
+      </p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ════════════════════════════════════════════ STAGE 04 — PLAN -->
+<section id="plan" class="stage-section">
+  <div class="section-bg-glow" style="bottom:-100px;left:50%;transform:translateX(-50%);"></div>
+  <div class="stage-header">
+    <div>
+      <div class="stage-num">STAGE 04 — PLAN</div>
+      <h2 class="stage-title">Planning<br/>Layer</h2>
+      <div class="stage-tool-badge">
+        <span class="badge-icon">🧠</span>
+        CLAUDE OPUS + SONNET
+      </div>
+    </div>
+    <p class="stage-desc">Architecture, PRDs, folder structures, animation plans — every document generated by AI. The blueprint before the build.</p>
+  </div>
+
+  <div class="docs-grid" id="docsGrid">
+    <div class="doc-card">
+      <div class="doc-icon">📋</div>
+      <div class="doc-name">AI Product Experience PRD</div>
+      <div class="doc-meta">PRD.md · 2.3 KB</div>
+      <div class="doc-preview">FROM PRODUCT TO EXPERIENCE — storytelling presentation demonstrating how a simple physical product is transformed into a complete digital experience using AI...</div>
+    </div>
+    <div class="doc-card">
+      <div class="doc-icon">🗺️</div>
+      <div class="doc-name">AI Product Journey Flowchart</div>
+      <div class="doc-meta">FLOWCHART.md · 3.3 KB</div>
+      <div class="doc-preview">Build a premium one-page storytelling experience that demonstrates the complete journey from a physical product to a production-ready website using AI...</div>
+    </div>
+    <div class="doc-card">
+      <div class="doc-icon">🎬</div>
+      <div class="doc-name">Antigravity Master Prompt</div>
+      <div class="doc-meta">ANIMATION-PLAN.md · 6.6 KB</div>
+      <div class="doc-preview">Design and build a premium cinematic product website for Northern Trust Power Banks. The experience must feel expensive, minimal, elegant, cinematic, and engineered...</div>
+    </div>
+  </div>
+
+  <div style="margin-top:40px; padding:28px 32px; border:1px solid var(--border); border-radius:16px; background:var(--card-bg);">
+    <div class="stage-num" style="margin-bottom:12px;">THE PLANNING PHILOSOPHY</div>
+    <p style="font-size:15px; color:var(--muted); line-height:1.8; max-width:680px;">
+      Claude Opus structured the entire project — from PRDs to animation plans. Claude Sonnet refined each document and generated the implementation prompts that drove the actual code. <span style="color:var(--white);">AI as the architect, then the builder.</span>
+    </p>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ════════════════════════════════════════════ STAGE 05 — BUILD -->
+<section id="build" class="stage-section">
+  <div class="stage-header">
+    <div>
+      <div class="stage-num">STAGE 05 — BUILD</div>
+      <h2 class="stage-title">Development</h2>
+      <div class="stage-tool-badge">
+        <span class="badge-icon">⚡</span>
+        CLAUDE SONNET + ANTIGRAVITY IDE
+      </div>
+    </div>
+    <p class="stage-desc">Markdown planning documents converted into production-ready code. AI writes the code, the IDE orchestrates the workflow.</p>
+  </div>
+
+  <div class="build-flow" id="buildFlow">
+    <div class="build-col">
+      <div class="build-col-head">INPUT — MARKDOWN</div>
+      <div class="code-block">
+        <div><span class="code-comment"># FROM PRODUCT TO EXPERIENCE</span></div>
+        <div><span class="code-comment">## AI-Powered Product Creation</span></div>
+        <br/>
+        <div><span class="code-keyword">## Design System</span></div>
+        <div>- Background: <span class="code-string">#000000</span></div>
+        <div>- Accent: <span class="code-string">#1DB954</span></div>
+        <br/>
+        <div><span class="code-keyword">## Stack</span></div>
+        <div>- <span class="code-fn">Next.js</span></div>
+        <div>- <span class="code-fn">GSAP</span> + ScrollTrigger</div>
+        <div>- <span class="code-fn">TailwindCSS</span></div>
+        <div>- <span class="code-fn">Lenis</span></div>
+        <br/>
+        <div><span class="code-comment">## Sections</span></div>
+        <div>01 — Hero</div>
+        <div>02 — Pipeline</div>
+        <div>03 — Gallery</div>
+        <div>...</div>
+      </div>
+    </div>
+    <div class="build-col" style="background: linear-gradient(135deg, rgba(29,185,84,0.03) 0%, transparent 100%);">
+      <div class="build-col-head">AI TRANSFORMS INTO CODE</div>
+      <div class="code-block">
+        <div><span class="code-keyword">import</span> { <span class="code-fn">gsap</span> } from <span class="code-string">'gsap'</span></div>
+        <div><span class="code-keyword">import</span> { <span class="code-fn">ScrollTrigger</span> } from <span class="code-string">'gsap/ScrollTrigger'</span></div>
+        <br/>
+        <div><span class="code-fn">gsap</span>.<span class="code-fn">registerPlugin</span>(<span class="code-green">ScrollTrigger</span>)</div>
+        <br/>
+        <div><span class="code-keyword">const</span> <span class="code-fn">hero</span> = <span class="code-fn">gsap</span>.<span class="code-fn">timeline</span>({</div>
+        <div>&nbsp;&nbsp;scrollTrigger: {</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;trigger: <span class="code-string">'#hero'</span>,</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;start: <span class="code-string">'top top'</span>,</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;pin: <span class="code-keyword">true</span></div>
+        <div>&nbsp;&nbsp;}</div>
+        <div>})</div>
+        <br/>
+        <div><span class="code-fn">hero</span>.<span class="code-fn">from</span>(<span class="code-string">'.hero-title'</span>, {</div>
+        <div>&nbsp;&nbsp;y: <span class="code-green">60</span>, opacity: <span class="code-green">0</span>,</div>
+        <div>&nbsp;&nbsp;duration: <span class="code-green">1.2</span></div>
+        <div>})</div>
+      </div>
+    </div>
+    <div class="build-col">
+      <div class="build-col-head">OUTPUT — WEBSITE</div>
+      <div class="website-preview">
+        <div class="preview-bar">
+          <div class="preview-dot" style="background:#ff5f57;"></div>
+          <div class="preview-dot" style="background:#febc2e;"></div>
+          <div class="preview-dot" style="background:#28c840;"></div>
+          <div class="preview-url">nt-battery.vercel.app</div>
+          <a href="https://nt-battery.vercel.app/" target="_blank" style="margin-left:auto; font-family:var(--font-mono); font-size:9px; color:var(--green); text-decoration:none; letter-spacing:1px; padding:2px 8px; border:1px solid var(--border-green); border-radius:4px;">↗ OPEN</a>
+        </div>
+        <iframe
+          src="https://nt-battery.vercel.app/"
+          style="flex:1; width:100%; border:none; display:block;"
+          title="NT Battery — Live Site"
+          loading="lazy"
+          sandbox="allow-scripts allow-same-origin allow-popups"
+        ></iframe>
+      </div>
+      <p style="color:var(--muted); font-size:13px; line-height:1.7; margin-top:16px;">
+        Markdown documentation → AI prompt engineering → Production React/Next.js codebase deployed on Vercel.
+      </p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ════════════════════════════════════════════ STAGE 06 — DEPLOY -->
+<section id="deploy" class="stage-section">
+  <div class="stage-header">
+    <div>
+      <div class="stage-num">STAGE 06 — DEPLOY</div>
+      <h2 class="stage-title">Deployment</h2>
+      <div class="stage-tool-badge">
+        <span class="badge-icon">▲</span>
+        VERCEL
+      </div>
+    </div>
+    <p class="stage-desc">Push to GitHub. Vercel handles CI/CD. A global CDN. Production in minutes — not months.</p>
+  </div>
+
+  <div class="deploy-grid">
+    <div class="deploy-card highlight" id="deployCard1">
+      <div class="deploy-icon">▲</div>
+      <div class="deploy-title">Live Production</div>
+      <div class="deploy-url">https://nt-battery.vercel.app/</div>
+      <div class="deploy-status">
+        <div class="status-dot"></div>
+        DEPLOYED & LIVE
+      </div>
+      <div class="deploy-metrics">
+        <div class="metric">
+          <div class="metric-val">99</div>
+          <div class="metric-label">PERF SCORE</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val">&lt;1s</div>
+          <div class="metric-label">LOAD TIME</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val">CDN</div>
+          <div class="metric-label">GLOBAL EDGE</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val">SSL</div>
+          <div class="metric-label">SECURE</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="deploy-card" id="deployCard2">
+      <div class="deploy-icon">📊</div>
+      <div class="deploy-title">The Full Pipeline</div>
+      <p style="color:var(--muted); font-size:14px; line-height:1.8; margin-bottom:24px;">
+        From a phone photo to a deployed production website — here's the full AI-powered transformation:
+      </p>
+      <div class="pipeline-flow" id="pipelineFlow" style="gap:0; max-width:100%;">
+        <div class="pipe-step" style="opacity:1; transform:none; padding:12px 20px; margin-bottom:0;">
+          <div class="pipe-icon" style="width:32px;height:32px;font-size:14px;">📱</div>
+          <div><div class="pipe-label" style="font-size:13px;">Physical Product</div><div class="pipe-sub">Phone camera capture</div></div>
+        </div>
+        <div style="width:1px;height:16px;background:linear-gradient(to bottom,var(--green),transparent);margin:2px auto;"></div>
+        <div class="pipe-step" style="opacity:1; transform:none; padding:12px 20px; margin-bottom:0;">
+          <div class="pipe-icon" style="width:32px;height:32px;font-size:14px;">✦</div>
+          <div><div class="pipe-label" style="font-size:13px;">AI Photography</div><div class="pipe-sub">Gemini Nano Banana</div></div>
+        </div>
+        <div style="width:1px;height:16px;background:linear-gradient(to bottom,var(--green),transparent);margin:2px auto;"></div>
+        <div class="pipe-step" style="opacity:1; transform:none; padding:12px 20px; margin-bottom:0;">
+          <div class="pipe-icon" style="width:32px;height:32px;font-size:14px;">🎬</div>
+          <div><div class="pipe-label" style="font-size:13px;">AI Video</div><div class="pipe-sub">Google Omni</div></div>
+        </div>
+        <div style="width:1px;height:16px;background:linear-gradient(to bottom,var(--green),transparent);margin:2px auto;"></div>
+        <div class="pipe-step" style="opacity:1; transform:none; padding:12px 20px; margin-bottom:0;">
+          <div class="pipe-icon" style="width:32px;height:32px;font-size:14px;">🧠</div>
+          <div><div class="pipe-label" style="font-size:13px;">AI Planning</div><div class="pipe-sub">Claude Opus + Sonnet</div></div>
+        </div>
+        <div style="width:1px;height:16px;background:linear-gradient(to bottom,var(--green),transparent);margin:2px auto;"></div>
+        <div class="pipe-step" style="opacity:1; transform:none; padding:12px 20px; margin-bottom:0;">
+          <div class="pipe-icon" style="width:32px;height:32px;font-size:14px;">⚡</div>
+          <div><div class="pipe-label" style="font-size:13px;">AI Development</div><div class="pipe-sub">Antigravity IDE</div></div>
+        </div>
+        <div style="width:1px;height:16px;background:linear-gradient(to bottom,var(--green),transparent);margin:2px auto;"></div>
+        <div class="pipe-step" style="opacity:1; transform:none; padding:12px 20px; margin-bottom:0; border-color:var(--border-green); background:rgba(29,185,84,0.05);">
+          <div class="pipe-icon" style="width:32px;height:32px;font-size:14px;">▲</div>
+          <div><div class="pipe-label" style="font-size:13px; color:var(--green);">Production Website</div><div class="pipe-sub">Vercel deployment</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ════════════════════════════════════════════ PIPELINE VERTICAL -->
+<section id="pipeline">
+  <div style="text-align:center; margin-bottom: 80px;">
+    <div class="stage-num" style="text-align:center; margin-bottom:16px;">THE COMPLETE TRANSFORMATION</div>
+    <h2 class="stage-title" style="text-align:center; font-size:clamp(36px,5vw,64px);">Physical → Digital</h2>
+  </div>
+  <div class="pipeline-flow" id="mainPipeline">
+    <div class="pipe-step">
+      <div class="pipe-icon">📱</div>
+      <div>
+        <div class="pipe-label">Physical Product</div>
+        <div class="pipe-sub">Northern Trust Power Bank — photographed with a phone</div>
+      </div>
+    </div>
+    <div class="pipe-connector"></div>
+    <div class="pipe-step">
+      <div class="pipe-icon">✦</div>
+      <div>
+        <div class="pipe-label">AI-Generated Photography</div>
+        <div class="pipe-sub">6 premium commercial renders — Gemini Nano Banana</div>
+      </div>
+    </div>
+    <div class="pipe-connector"></div>
+    <div class="pipe-step">
+      <div class="pipe-icon">🎬</div>
+      <div>
+        <div class="pipe-label">AI-Generated Video</div>
+        <div class="pipe-sub">Cinematic product video — Google Omni</div>
+      </div>
+    </div>
+    <div class="pipe-connector"></div>
+    <div class="pipe-step">
+      <div class="pipe-icon">📋</div>
+      <div>
+        <div class="pipe-label">Markdown Documentation</div>
+        <div class="pipe-sub">PRD, architecture, animation plan — Claude Opus</div>
+      </div>
+    </div>
+    <div class="pipe-connector"></div>
+    <div class="pipe-step">
+      <div class="pipe-icon">⚡</div>
+      <div>
+        <div class="pipe-label">AI-Written Code</div>
+        <div class="pipe-sub">Next.js + GSAP + TailwindCSS — Claude Sonnet + Antigravity</div>
+      </div>
+    </div>
+    <div class="pipe-connector"></div>
+    <div class="pipe-step" style="border-color: var(--border-green); background: linear-gradient(135deg, rgba(29,185,84,0.08) 0%, var(--card-bg) 100%);">
+      <div class="pipe-icon">🌐</div>
+      <div>
+        <div class="pipe-label" style="color: var(--green);">Production Website</div>
+        <div class="pipe-sub">nt-battery.vercel.app — live on global CDN</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ════════════════════════════════════════════ FINAL -->
+<section id="final">
+  <h2 class="final-title" id="finalTitle">
+    AI accelerates.<br/>
+    Engineering <span>delivers</span>.<br/>
+    Together they<br/>create.
+  </h2>
+  <p class="final-sub" id="finalSub">
+    From a single phone photograph to a globally deployed production website — powered entirely by AI, grounded in engineering excellence.
+  </p>
+  <a href="https://nt-battery.vercel.app/" target="_blank" class="final-link" id="finalLink">
+    <span>▲</span>
+    Visit Live Site
+    <span>→</span>
+  </a>
+  <div class="final-credits" id="finalCredits">
+    NORTHERN TRUST BATTERY · AI JOURNEY · 2026 · BUILT WITH ANTIGRAVITY IDE
+  </div>
+</section>
+
+<script>
+// ─── ASSET MANIFEST ─────────────────────────────────────────────
+// ─── URL ENCODE PATH (handles spaces, parens, etc.) ──────────────
+function encodePath(p) {
+  return p.split('/').map((seg, i) => i === 0 ? seg : encodeURIComponent(seg)).join('/');
+}
+
+const ASSETS = {
+  captured: [
+    'public/assets/captured/WhatsApp Image 2026-06-12 at 19.40.19 (1).jpeg',
+    'public/assets/captured/WhatsApp Image 2026-06-12 at 19.40.19.jpeg',
+    'public/assets/captured/WhatsApp Image 2026-06-12 at 19.40.20 (1).jpeg',
+    'public/assets/captured/WhatsApp Image 2026-06-12 at 19.40.20.jpeg',
+    'public/assets/captured/WhatsApp Image 2026-06-12 at 19.40.21 (1).jpeg',
+  ],
+  generated: [
+    { src: 'public/assets/generated/Premium Product Photography Jun 12.jpeg', title: 'Premium Studio Shot', span: 2 },
+    { src: 'public/assets/generated/Add Thin Sliver Jun 12 2026.jpeg', title: 'Sliver Composition' },
+    { src: 'public/assets/generated/Close-up Side View Jun 12 2022.jpeg', title: 'Side Profile' },
+    { src: 'public/assets/generated/Premium Product Photography Jun 12 (1).jpeg', title: 'Editorial Render' },
+    { src: 'public/assets/generated/Premium Product Photography Jun 12 (3).jpeg', title: 'High-End Lifestyle' },
+    { src: 'public/assets/generated/High-end X-ray 3D Jun 12.jpeg', title: 'X-Ray 3D View' },
+  ]
+};
+
+// ─── BUILD CAPTURED GRID ─────────────────────────────────────────
+function buildCaptureGrid() {
+  const grid = document.getElementById('captureGrid');
+  ASSETS.captured.forEach((src, i) => {
+    const encoded = encodePath(src);
+    const card = document.createElement('div');
+    card.className = 'capture-card';
+    card.innerHTML = `
+      <img src="${encoded}" alt="Captured reference ${i+1}" />
+      <div class="capture-card-overlay">
+        <span class="capture-card-tag">REF ${String(i+1).padStart(2,'0')}</span>
+      </div>
+    `;
+    card.addEventListener('click', () => openLightbox(encoded));
+    grid.appendChild(card);
+  });
+}
+
+// ─── BUILD GENERATE GRID ─────────────────────────────────────────
+function buildGenerateGrid() {
+  const grid = document.getElementById('generateGrid');
+  ASSETS.generated.forEach((item, i) => {
+    const encoded = encodePath(item.src);
+    const card = document.createElement('div');
+    card.className = 'gen-card' + (item.span ? ' gen-highlight' : '');
+    card.innerHTML = `
+      <img src="${encoded}" alt="${item.title}" />
+      <div class="ai-tag">AI GENERATED</div>
+      <div class="gen-card-info">
+        <div class="gen-card-title">${item.title}</div>
+        <div class="gen-card-model">Gemini Nano Banana</div>
+      </div>
+    `;
+    card.addEventListener('click', () => openLightbox(encoded));
+    grid.appendChild(card);
+  });
+}
+
+// ─── LIGHTBOX ─────────────────────────────────────────────────────
+function openLightbox(src) {
+  document.getElementById('lightbox-img').src = src;
+  document.getElementById('lightbox').classList.add('open');
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+}
+document.getElementById('lightbox').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeLightbox();
+});
+
+// ─── CURSOR ───────────────────────────────────────────────────────
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursorRing');
+let cx = 0, cy = 0, rx = 0, ry = 0;
+
+document.addEventListener('mousemove', e => { cx = e.clientX; cy = e.clientY; });
+
+function animateCursor() {
+  cursor.style.left = cx + 'px';
+  cursor.style.top = cy + 'px';
+  rx += (cx - rx) * 0.12;
+  ry += (cy - ry) * 0.12;
+  ring.style.left = rx + 'px';
+  ring.style.top = ry + 'px';
+  requestAnimationFrame(animateCursor);
+}
+animateCursor();
+
+document.querySelectorAll('a, button, .capture-card, .gen-card, .doc-card, .rail-node').forEach(el => {
+  el.addEventListener('mouseenter', () => {
+    cursor.style.width = '20px';
+    cursor.style.height = '20px';
+    ring.style.width = '56px';
+    ring.style.height = '56px';
+  });
+  el.addEventListener('mouseleave', () => {
+    cursor.style.width = '10px';
+    cursor.style.height = '10px';
+    ring.style.width = '36px';
+    ring.style.height = '36px';
+  });
+});
+
+// ─── PROGRESS BAR ─────────────────────────────────────────────────
+const progressBar = document.getElementById('progress-bar');
+window.addEventListener('scroll', () => {
+  const pct = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight);
+  progressBar.style.transform = `scaleX(${pct})`;
+});
+
+// ─── STAGE RAIL NAVIGATION ────────────────────────────────────────
+document.querySelectorAll('.rail-node').forEach(node => {
+  node.addEventListener('click', () => {
+    const target = node.dataset.target;
+    document.querySelector(target)?.scrollIntoView({ behavior: 'smooth' });
+  });
+});
+
+// ─── GSAP ANIMATIONS ──────────────────────────────────────────────
+gsap.registerPlugin(ScrollTrigger);
+
+// Hero entrance
+const heroTl = gsap.timeline({ delay: 0.2 });
+heroTl
+  .to('#heroEyebrow', { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' })
+  .to('#heroTitle', { opacity: 1, y: 0, duration: 1, ease: 'power3.out' }, '-=0.4')
+  .to('#heroSub', { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' }, '-=0.5')
+  .to('#heroPill', { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }, '-=0.3')
+  .to('#heroScroll', { opacity: 1, duration: 0.6 }, '-=0.2');
+
+// Workflow strip
+gsap.utils.toArray('.wf-step').forEach((el, i) => {
+  gsap.to(el, {
+    opacity: 1, y: 0,
+    duration: 0.6,
+    delay: i * 0.1,
+    ease: 'power3.out',
+    scrollTrigger: { trigger: '#workflow', start: 'top 80%' }
+  });
+});
+
+// Workflow label
+gsap.to('.workflow-label', {
+  opacity: 1, duration: 0.8,
+  scrollTrigger: { trigger: '#workflow', start: 'top 80%' }
+});
+
+// Capture cards — no scroll trigger, always visible
+// Generated cards — no scroll trigger, always visible
+
+// Animate section
+gsap.to('#videoWrapper', {
+  opacity: 1, x: 0,
+  duration: 1,
+  ease: 'power3.out',
+  scrollTrigger: { trigger: '#animate', start: 'top 70%' }
+});
+gsap.to('#animateInfo', {
+  opacity: 1, x: 0,
+  duration: 1,
+  delay: 0.2,
+  ease: 'power3.out',
+  scrollTrigger: { trigger: '#animate', start: 'top 70%' }
+});
+
+// Doc cards
+gsap.utils.toArray('.doc-card').forEach((card, i) => {
+  gsap.to(card, {
+    opacity: 1, y: 0,
+    duration: 0.7,
+    delay: i * 0.15,
+    ease: 'power3.out',
+    scrollTrigger: { trigger: '#plan', start: 'top 70%' }
+  });
+});
+
+// Build cols
+gsap.utils.toArray('.build-col').forEach((col, i) => {
+  gsap.to(col, {
+    opacity: 1, y: 0,
+    duration: 0.7,
+    delay: i * 0.15,
+    ease: 'power3.out',
+    scrollTrigger: { trigger: '#build', start: 'top 70%' }
+  });
+});
+
+// Deploy cards
+['#deployCard1', '#deployCard2'].forEach((id, i) => {
+  gsap.to(id, {
+    opacity: 1, y: 0,
+    duration: 0.8,
+    delay: i * 0.2,
+    ease: 'power3.out',
+    scrollTrigger: { trigger: '#deploy', start: 'top 70%' }
+  });
+});
+
+// Pipeline
+gsap.utils.toArray('#mainPipeline .pipe-step').forEach((step, i) => {
+  gsap.to(step, {
+    opacity: 1, x: 0,
+    duration: 0.6,
+    delay: i * 0.1,
+    ease: 'power3.out',
+    scrollTrigger: { trigger: '#pipeline', start: 'top 70%' }
+  });
+});
+gsap.utils.toArray('#mainPipeline .pipe-connector').forEach((c, i) => {
+  gsap.to(c, {
+    opacity: 1,
+    duration: 0.4,
+    delay: i * 0.1 + 0.1,
+    scrollTrigger: { trigger: '#pipeline', start: 'top 70%' }
+  });
+});
+
+// Final
+gsap.to('#finalTitle', {
+  opacity: 1,
+  duration: 1,
+  ease: 'power3.out',
+  scrollTrigger: { trigger: '#final', start: 'top 70%' }
+});
+gsap.to('#finalSub', {
+  opacity: 1,
+  duration: 1, delay: 0.2,
+  ease: 'power3.out',
+  scrollTrigger: { trigger: '#final', start: 'top 70%' }
+});
+gsap.to('#finalLink', {
+  opacity: 1,
+  duration: 0.8, delay: 0.4,
+  ease: 'power3.out',
+  scrollTrigger: { trigger: '#final', start: 'top 70%' }
+});
+gsap.to('#finalCredits', {
+  opacity: 1,
+  duration: 0.8, delay: 0.6,
+  ease: 'power3.out',
+  scrollTrigger: { trigger: '#final', start: 'top 70%' }
+});
+
+// ─── ACTIVE RAIL TRACKING ────────────────────────────────────────
+const sections = ['#hero', '#capture', '#generate', '#animate', '#plan', '#build', '#deploy'];
+const railNodes = document.querySelectorAll('.rail-node');
+const navStage = document.getElementById('nav-stage');
+const stageNames = ['HERO', 'STAGE 01 — CAPTURE', 'STAGE 02 — GENERATE', 'STAGE 03 — ANIMATE', 'STAGE 04 — PLAN', 'STAGE 05 — BUILD', 'STAGE 06 — DEPLOY'];
+
+sections.forEach((id, i) => {
+  ScrollTrigger.create({
+    trigger: id,
+    start: 'top center',
+    end: 'bottom center',
+    onEnter: () => updateRail(i),
+    onEnterBack: () => updateRail(i),
+  });
+});
+
+function updateRail(idx) {
+  railNodes.forEach((n, i) => n.classList.toggle('active', i === idx));
+  navStage.textContent = stageNames[idx] || '';
+}
+
+// ─── PARTICLES ────────────────────────────────────────────────────
+const canvas = document.getElementById('particles');
+const ctx = canvas.getContext('2d');
+let W, H, particles = [];
+
+function resizeCanvas() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+for (let i = 0; i < 60; i++) {
+  particles.push({
+    x: Math.random() * 1920,
+    y: Math.random() * 1080,
+    vx: (Math.random() - 0.5) * 0.3,
+    vy: (Math.random() - 0.5) * 0.3,
+    r: Math.random() * 1.5 + 0.5,
+    a: Math.random() * 0.4 + 0.1
+  });
+}
+
+function drawParticles() {
+  ctx.clearRect(0, 0, W, H);
+  particles.forEach(p => {
+    p.x += p.vx;
+    p.y += p.vy;
+    if (p.x < 0) p.x = W;
+    if (p.x > W) p.x = 0;
+    if (p.y < 0) p.y = H;
+    if (p.y > H) p.y = 0;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(29,185,84,${p.a})`;
+    ctx.fill();
+  });
+  requestAnimationFrame(drawParticles);
+}
+drawParticles();
+
+// ─── INIT ─────────────────────────────────────────────────────────
+buildCaptureGrid();
+buildGenerateGrid();
+</script>
+</body>
+</html>

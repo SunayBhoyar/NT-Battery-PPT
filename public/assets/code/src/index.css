@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Cormorant Garamond", serif;
+  --font-sans: "Inter", sans-serif;
+  --color-gold-light: #E8C78A;
+  --color-gold-primary: #C8A66A;
+  --color-gold-dark: #9B7E4B;
+  --color-gold-deep: #4B3F24;
+}
+
+:root {
+  --background: #050505;
+  --primary-gold: #C8A66A;
+  --highlight-gold: #E8C78A;
+  --text-primary: #FFFFFF;
+  --text-muted: #A8A8A8;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Custom scroll bar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #050505;
+}
+::-webkit-scrollbar-thumb {
+  background: #C8A66A;
+  border-radius: 3px;
+}
+
+/* Typography styles */
+h1, h2, h3, h4 {
+  font-family: 'Cormorant Garamond', serif;
+  letter-spacing: 0.1em;
+}
+
+.gold-gradient-text {
+  background: linear-gradient(135deg, #E8C78A 0%, #C8A66A 50%, #9B7E4B 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gold-glow {
+  box-shadow: 0 0 30px rgba(200, 166, 106, 0.15);
+}
+
+.gold-border-subtle {
+  border: 1px solid rgba(200, 166, 106, 0.15);
+}
+
+/* Lenis smooth scrolling configuration */
+html.lenis, html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
+}
